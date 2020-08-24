@@ -5,6 +5,7 @@ import List from "./models/List";
 import * as searchView from "./views/searchView";
 import * as recipeView from "./views/recipeView";
 import * as listView from "./views/listView";
+import * as likesView from "./views/likesView";
 import { elements, renderLoader, clearLoader } from "./views/base";
 import Likes from "./models/Likes";
 
@@ -16,7 +17,6 @@ import Likes from "./models/Likes";
  *  - Liked recipes
  */
 const state = {};
-window.state = state;
 
 /******
  * 
@@ -26,8 +26,6 @@ window.state = state;
 const controlSearch = async () => {
   // Get query from view
   const query = searchView.getInput() /// TODO
-
-  console.log(query)
 
   if (query) {
     // New search object and add to state
@@ -80,7 +78,6 @@ elements.searchResPages.addEventListener('click', e => {
 const controlRecipe = async () => {
   // Get ID from URL
   const id = window.location.hash.replace('#', '');
-  console.log(id)
 
   if (id) {
     // Prepare the UI for changes
@@ -106,7 +103,10 @@ const controlRecipe = async () => {
       
       // Render recipe
       clearLoader();
-      recipeView.renderRecipe(state.recipe)
+      recipeView.renderRecipe(
+        state.recipe,
+        state.likes.isLiked(id)
+        )
     } catch (err) {
       console.log('Error processing recipe', err)
     }
@@ -171,9 +171,11 @@ const controlLike = () => {
     )
 
     // Toggle the like button
+    likesView.toggleLikeBtn(true);
 
     // Add like to UI list
-    console.log(state.likes);
+    likesView.renderLike(newLike)
+    console.log(state.likes)
 
     // User has yet liked the current recipe
   } else {
@@ -181,14 +183,24 @@ const controlLike = () => {
     state.likes.deleteLike(currentID)
 
     // Toggle the like button
+    likesView.toggleLikeBtn(false);
 
     // Remove like to UI list
+    likesView.deleteLike(currentID)
     console.log(state.likes)
-
-
   }
+  likesView.toggleLikeMenu(state.likes.getNumLikes())
 }
 
+// Restore liked recipes on page load
+window.addEventListener('load', () => {
+  state.likes = new Likes();
+  state.likes.readStorage();
+  likesView.toggleLikeMenu(state.likes.getNumLikes())
+
+  // Render existing likes
+  state.likes.likes.forEach(like => likesView.renderLike(like));
+})
 
 
 // Handling receipe button clicks
@@ -210,6 +222,4 @@ elements.recipe.addEventListener('click', e => {
     // Like controller
     controlLike();
   }
-})
-
-window.l = new List();
+});
